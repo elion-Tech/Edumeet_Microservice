@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import router from './routes';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
 
 dotenv.config();
 
@@ -10,6 +11,8 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Update CORS for production security
+app.use(helmet());
+
 app.use(cors({
     origin: '*', // In a production environment, you should list your actual domain here
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
