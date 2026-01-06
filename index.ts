@@ -44,7 +44,7 @@ if (!MONGODB_URI) {
 }
 
 // Track unhandled rejections to prevent silent node crashes
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
