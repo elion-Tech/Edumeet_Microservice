@@ -1,5 +1,16 @@
 import { User, Course, Progress, Notification } from './models';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import nodemailer from 'nodemailer';
+import ResetToken from './resetTokenModel';
+
+const transporter = nodemailer.createTransport({
+    service: 'gmail', 
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+    },
+});
 
 // Controller for Course related operations
 export const CourseController = {
@@ -212,6 +223,69 @@ export const UserController = {
         } catch (e) {
             console.error("User.delete error:", e);
             res.status(500).json({ error: "Deletion failed" });
+        }
+    },
+
+    async requestPasswordReset(req: any, res: any) {
+        try {
+            const { email } = req.body;
+            const user = await User.findOne({ email } as any);
+    
+            if (!user) {
+                // Return success even if user not found to prevent email enumeration
+                return res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+            }
+    
+            // Clear any existing reset tokens for this user
+            await ResetToken.findOneAndDelete({ userId: user._id } as any);
+    
+            // Generate a secure random token
+            const resetToken = crypto.randomBytes(32).toString('hex');
+    
+            // Save token to database
+            await new ResetToken({
+                userId: user._id,
+                token: resetToken,
+            }).save();
+    
+            // Construct Reset Link
+            const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+            const link = `${clientUrl}/reset-password?token=${resetToken}`;
+    
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: user.email,
+                subject: 'Edumeet Password Reset Request',
+                html: `<p>You requested a password reset. Click <a href="${link}">here</a> to reset your password.</p><p>This link expires in 1 hour.</p>`
+            });
+    
+            res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
+        } catch (error) {
+            console.error('Password Reset Request Error:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
+        }
+    },
+
+    async resetPassword(req: any, res: any) {
+        try {
+            const { token, newPassword } = req.body;
+    
+            const passwordResetToken = await ResetToken.findOne({ token } as any);
+            if (!passwordResetToken) return res.status(400).json({ error: 'Invalid or expired password reset token.' });
+    
+            const user = await User.findById(passwordResetToken.userId as any);
+            if (!user) return res.status(400).json({ error: 'User not found.' });
+    
+            const salt = await bcrypt.genSalt(10);
+            user.password = await bcrypt.hash(newPassword, salt);
+            await user.save();
+    
+            await passwordResetToken.deleteOne();
+    
+            res.status(200).json({ message: 'Password has been reset successfully.' });
+        } catch (error) {
+            console.error('Reset Password Error:', error);
+            res.status(500).json({ error: 'Internal Server Error' });
         }
     }
 };

@@ -39,7 +39,7 @@ app.use('/api', router);
 const MONGODB_URI = process.env.MONGODB_URI;
 
 if (!MONGODB_URI) {
-    console.error('❌ FATAL: MONGODB_URI is not defined. Platform cannot initialize.');
+      console.error('❌ FATAL: MONGODB_URI is not defined. Platform cannot initialize.');
     process.exit(1);
 }
 

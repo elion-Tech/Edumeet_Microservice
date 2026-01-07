@@ -6,6 +6,8 @@ const router = Router();
 
 // Auth Route
 router.post('/users/login', UserController.login);
+router.post('/users/request-password-reset', UserController.requestPasswordReset);
+router.post('/users/reset-password', UserController.resetPassword);
 
 // Course Routes
 router.get('/courses', CourseController.getAll);
