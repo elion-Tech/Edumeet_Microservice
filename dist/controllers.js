@@ -10,24 +10,28 @@ const crypto_1 = __importDefault(require("crypto"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const resetTokenModel_1 = __importDefault(require("./resetTokenModel"));
 const transporter = nodemailer_1.default.createTransport({
-    service: 'gmail',
-    pool: true,
-    maxConnections: 1,
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    tls: {
+        rejectUnauthorized: false
+    },
     logger: true,
     debug: true,
-    connectionTimeout: 30000,
-    greetingTimeout: 30000,
-    socketTimeout: 30000,
     family: 4,
 });
 // Verify SMTP connection configuration on startup
 transporter.verify((error, success) => {
     if (error) {
         console.error('❌ SMTP Connection Error:', error);
+        console.error('DEBUG Config:', {
+            user: process.env.EMAIL_USER ? 'DEFINED' : 'UNDEFINED',
+            pass: process.env.EMAIL_PASS ? 'DEFINED' : 'UNDEFINED'
+        });
     }
     else {
         console.log('✅ SMTP Server is ready to take our messages');

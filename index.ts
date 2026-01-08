@@ -1,11 +1,11 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import router from './routes';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
