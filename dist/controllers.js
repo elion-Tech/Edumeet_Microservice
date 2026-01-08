@@ -10,9 +10,9 @@ const crypto_1 = __importDefault(require("crypto"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const resetTokenModel_1 = __importDefault(require("./resetTokenModel"));
 const transporter = nodemailer_1.default.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    service: 'gmail',
+    pool: true,
+    maxConnections: 1,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,

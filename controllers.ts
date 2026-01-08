@@ -5,9 +5,9 @@ import nodemailer from 'nodemailer';
 import ResetToken from './resetTokenModel';
 
 const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    service: 'gmail',
+    pool: true,
+    maxConnections: 1,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
