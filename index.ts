@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*', // Add FRONTEND_URL (your Vercel link) to Render Environment Variables
+    origin: '*', // In a production environment, you should list your actual domain here
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }) as any);
