@@ -11,12 +11,18 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const resetTokenModel_1 = __importDefault(require("./resetTokenModel"));
 const transporter = nodemailer_1.default.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
+    port: 465,
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
     },
+    logger: true,
+    debug: true,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 30000,
+    family: 4,
 });
 // Verify SMTP connection configuration on startup
 transporter.verify((error, success) => {
