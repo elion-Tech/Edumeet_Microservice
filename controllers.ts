@@ -14,6 +14,15 @@ const transporter = nodemailer.createTransport({
     },
 });
 
+// Verify SMTP connection configuration on startup
+transporter.verify((error, success) => {
+    if (error) {
+        console.error('❌ SMTP Connection Error:', error);
+    } else {
+        console.log('✅ SMTP Server is ready to take our messages');
+    }
+});
+
 // Controller for Course related operations
 export const CourseController = {
   async getAll(req: any, res: any) {
