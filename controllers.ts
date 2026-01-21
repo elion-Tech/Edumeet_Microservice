@@ -38,7 +38,7 @@ export const CourseController = {
   async getAll(req: any, res: any) {
     try {
       // Admins/Tutors can see all courses (e.g., ?view=all), students only see published ones.
-      const filter: any = { published: true };
+      const filter: any = { published: true || false };
       if (req.query.view === 'all') {
           delete filter.published;
       }
