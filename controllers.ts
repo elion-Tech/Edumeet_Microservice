@@ -37,7 +37,12 @@ transporter.verify((error, success) => {
 export const CourseController = {
   async getAll(req: any, res: any) {
     try {
-      const courses = await Course.find({ published: true } as any).sort({ createdAt: -1 });
+      // Admins/Tutors can see all courses (e.g., ?view=all), students only see published ones.
+      const filter: any = { published: true };
+      if (req.query.view === 'all') {
+          delete filter.published;
+      }
+      const courses = await Course.find(filter).sort({ createdAt: -1 });
       res.status(200).json(courses);
     } catch (e) {
       console.error("Course.getAll error:", e);
@@ -68,6 +73,23 @@ export const CourseController = {
     } catch (e: any) {
       console.error("Course Create Error:", e);
       res.status(400).json({ error: e.message || "Validation failed during course architecture" });
+    }
+  },
+
+  async togglePublish(req: any, res: any) {
+    try {
+      const { id } = req.params;
+      const course = await Course.findOne({ _id: id } as any);
+      if (!course) {
+        return res.status(404).json({ error: "Course not found" });
+      }
+      // Toggle the published status
+      course.published = !course.published;
+      await course.save();
+      res.status(200).json(course);
+    } catch (e) {
+      console.error("Course.togglePublish error:", e);
+      res.status(500).json({ error: "Failed to update publish status" });
     }
   },
 

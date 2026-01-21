@@ -14,6 +14,7 @@ router.get('/courses', CourseController.getAll);
 router.get('/courses/:id', CourseController.getById);
 router.post('/courses', CourseController.create);
 router.delete('/courses/:id', CourseController.delete);
+router.patch('/courses/:id/publish', CourseController.togglePublish);
 router.get('/courses/:id/students', CourseController.getEnrolledStudents);
 router.post('/courses/:courseId/live', CourseController.scheduleLive);
 
