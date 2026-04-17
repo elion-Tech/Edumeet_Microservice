@@ -21,7 +21,9 @@ else {
 exports.CourseController = {
     async getAll(req, res) {
         try {
-            const courses = await models_1.Course.find({ published: true }).sort({ createdAt: -1 });
+            // Synchronizing with source logic: allow admins to see unpublished via ?view=all
+            const filter = req.query.view === 'all' ? {} : { published: true };
+            const courses = await models_1.Course.find(filter).sort({ createdAt: -1 });
             res.status(200).json(courses);
         }
         catch (e) {
@@ -269,12 +271,15 @@ exports.UserController = {
     async resetPassword(req, res) {
         try {
             const { token, newPassword } = req.body;
+            if (!token || !newPassword) {
+                return res.status(400).json({ error: 'Token and new password are required.' });
+            }
             const passwordResetToken = await resetTokenModel_1.default.findOne({ token });
             if (!passwordResetToken)
-                return res.status(400).json({ error: 'Invalid or expired password reset token.' });
-            const user = await models_1.User.findById(passwordResetToken.userId);
+                return res.status(400).json({ error: 'TOKEN_NOT_FOUND', message: 'Invalid or expired password reset token.' });
+            const user = await models_1.User.findOne({ _id: passwordResetToken.userId.toString() });
             if (!user)
-                return res.status(400).json({ error: 'User not found.' });
+                return res.status(400).json({ error: 'USER_NOT_FOUND', message: 'User not found.' });
             const salt = await bcryptjs_1.default.genSalt(10);
             user.password = await bcryptjs_1.default.hash(newPassword, salt);
             await user.save();

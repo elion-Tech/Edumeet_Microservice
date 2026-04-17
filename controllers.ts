@@ -325,10 +325,14 @@ export const UserController = {
         try {
             const { token, newPassword } = req.body;
     
+            if (!token || !newPassword) {
+                return res.status(400).json({ error: 'Token and new password are required.' });
+            }
+
             const passwordResetToken = await ResetToken.findOne({ token } as any);
-            if (!passwordResetToken) return res.status(400).json({ error: 'Invalid or expired password reset token.' });
+            if (!passwordResetToken) return res.status(400).json({ error: 'TOKEN_NOT_FOUND', message: 'Invalid or expired password reset token.' });
     
-            const user = await User.findById(passwordResetToken.userId as any);
+            const user = await User.findOne({ _id: passwordResetToken.userId } as any);
             if (!user) return res.status(400).json({ error: 'User not found.' });
     
             const salt = await bcrypt.genSalt(10);
