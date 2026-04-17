@@ -241,7 +241,7 @@ exports.UserController = {
             }).save();
             // Construct Reset Link
             const clientUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-            const link = `${clientUrl}/reset-password?token=${resetToken}`;
+            const link = `${clientUrl}/#/reset-password?token=${resetToken}`;
             const sender = process.env.RESEND_SENDER_EMAIL;
             if (!sender) {
                 console.error('❌ Configuration Error: RESEND_SENDER_EMAIL is missing.');
