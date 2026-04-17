@@ -242,9 +242,14 @@ exports.UserController = {
             // Construct Reset Link
             const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
             const link = `${clientUrl}/reset-password?token=${resetToken}`;
+            const sender = process.env.RESEND_SENDER_EMAIL;
+            if (!sender) {
+                console.error('❌ Configuration Error: RESEND_SENDER_EMAIL is missing.');
+                return res.status(500).json({ error: 'Email service is misconfigured.' });
+            }
             // Use Resend to send the email
             const { data, error } = await resend.emails.send({
-                from: process.env.RESEND_SENDER_EMAIL, // Use the verified sender email from Resend
+                from: sender,
                 to: user.email,
                 subject: 'Edumeet Password Reset Request',
                 html: `<p>You requested a password reset. Click <a href="${link}">here</a> to reset your password.</p><p>This link expires in 1 hour.</p>`
