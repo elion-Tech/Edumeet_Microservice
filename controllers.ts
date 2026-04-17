@@ -1,4 +1,5 @@
 import { User, Course, Progress, Notification } from './models';
+import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { Resend } from 'resend';
@@ -15,13 +16,11 @@ if (!process.env.RESEND_API_KEY || !process.env.RESEND_SENDER_EMAIL) {
 
 // Controller for Course related operations
 export const CourseController = {
-  async getAll(req: any, res: any) {
+  async getAll(req: Request, res: Response) {
     try {
       // Admins/Tutors can see all courses (e.g., ?view=all), students only see published ones.
-      const filter: any = { published: true || false };
-      if (req.query.view === 'all') {
-          delete filter.published;
-      }
+      const filter: any = req.query.view === 'all' ? {} : { published: true };
+      
       const courses = await Course.find(filter).sort({ createdAt: -1 });
       res.status(200).json(courses);
     } catch (e) {
@@ -30,7 +29,7 @@ export const CourseController = {
     }
   },
 
-  async getById(req: any, res: any) {
+  async getById(req: Request, res: Response) {
     try {
       const course = await Course.findOne({ _id: req.params.id } as any);
       if (!course) return res.status(404).json({ error: "Course not found" });
@@ -41,7 +40,7 @@ export const CourseController = {
     }
   },
   
-  async create(req: any, res: any) {
+  async create(req: Request, res: Response) {
     try {
       const courseData = req.body;
       const course = await Course.findOneAndUpdate(
@@ -56,7 +55,7 @@ export const CourseController = {
     }
   },
 
-  async togglePublish(req: any, res: any) {
+  async togglePublish(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const course = await Course.findOne({ _id: id } as any);
@@ -73,7 +72,7 @@ export const CourseController = {
     }
   },
 
-  async delete(req: any, res: any) {
+  async delete(req: Request, res: Response) {
       try {
           await Course.findOneAndDelete({ _id: req.params.id } as any);
           res.status(204).send();
@@ -83,7 +82,7 @@ export const CourseController = {
       }
   },
 
-  async getEnrolledStudents(req: any, res: any) {
+  async getEnrolledStudents(req: Request, res: Response) {
     try {
       const { id: courseId } = req.params;
       const progressDocs = await Progress.find({ courseId } as any);
@@ -98,7 +97,7 @@ export const CourseController = {
     }
   },
 
-  async updateCache(req: any, res: any) {
+  async updateCache(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const { cacheName } = req.body;
@@ -115,7 +114,7 @@ export const CourseController = {
     }
   },
 
-  async scheduleLive(req: any, res: any) {
+  async scheduleLive(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
       const session = req.body;
@@ -130,7 +129,7 @@ export const CourseController = {
 
 // Controller for User related operations
 export const UserController = {
-    async getAll(req: any, res: any) {
+    async getAll(req: Request, res: Response) {
         try {
             const users = await User.find({} as any).select('-password');
             res.json(users);
@@ -140,7 +139,7 @@ export const UserController = {
         }
     },
 
-    async login(req: any, res: any) {
+    async login(req: Request, res: Response) {
         try {
             const { email, password } = req.body;
             const user = await User.findOne({ email } as any);
@@ -167,7 +166,7 @@ export const UserController = {
         }
     },
 
-    async save(req: any, res: any) {
+    async save(req: Request, res: Response) {
       try {
         const userData = req.body;
         if (!userData.email || !userData.password || !userData._id) {
@@ -207,7 +206,7 @@ export const UserController = {
       }
     },
 
-    async enroll(req: any, res: any) {
+    async enroll(req: Request, res: Response) {
         const { userId } = req.params;
         const { courseId } = req.body;
         try {
@@ -239,7 +238,7 @@ export const UserController = {
         }
     },
 
-    async toggleSuspension(req: any, res: any) {
+    async toggleSuspension(req: Request, res: Response) {
         try {
             const { userId } = req.params;
             const { isSuspended } = req.body;
@@ -252,7 +251,7 @@ export const UserController = {
         }
     },
 
-    async delete(req: any, res: any) {
+    async delete(req: Request, res: Response) {
         try {
             const { userId } = req.params;
             const user = await User.findOneAndDelete({ _id: userId } as any);
@@ -266,7 +265,7 @@ export const UserController = {
         }
     },
 
-    async requestPasswordReset(req: any, res: any) {
+    async requestPasswordReset(req: Request, res: Response) {
         try {
             const { email } = req.body;
             const user = await User.findOne({ email } as any);
@@ -292,11 +291,14 @@ export const UserController = {
             const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
             const link = `${clientUrl}/reset-password?token=${resetToken}`;
     
-            // Use Resend to send the email
+            // Use Resend to send the email with senior-level error handling
             const { data, error } = await resend.emails.send({
                 from: process.env.RESEND_SENDER_EMAIL as string,
                 to: user.email,
                 subject: 'Edumeet Password Reset Request',
+                headers: {
+                    'X-Entity-Ref-ID': resetToken // For tracking/deduplication
+                },
                 html: `<p>You requested a password reset. Click <a href="${link}">here</a> to reset your password.</p><p>This link expires in 1 hour.</p>`
             });
     
@@ -313,7 +315,7 @@ export const UserController = {
         }
     },
 
-    async resetPassword(req: any, res: any) {
+    async resetPassword(req: Request, res: Response) {
         try {
             const { token, newPassword } = req.body;
     
@@ -339,7 +341,7 @@ export const UserController = {
 
 // Controller for Progress tracking
 export const ProgressController = {
-  async get(req: any, res: any) {
+  async get(req: Request, res: Response) {
     try {
       const { userId, courseId } = req.params;
       const progress = await Progress.findOne({ userId, courseId } as any);
@@ -351,7 +353,7 @@ export const ProgressController = {
     }
   },
 
-  async update(req: any, res: any) {
+  async update(req: Request, res: Response) {
     try {
       const progressData = req.body;
       const progress = await Progress.findOneAndUpdate(
@@ -366,7 +368,7 @@ export const ProgressController = {
     }
   },
 
-  async gradeCapstone(req: any, res: any) {
+  async gradeCapstone(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const { score, feedback } = req.body;
@@ -393,7 +395,7 @@ export const ProgressController = {
 
 // Controller for Notifications
 export const NotificationController = {
-  async getByUser(req: any, res: any) {
+  async getByUser(req: Request, res: Response) {
     try {
       const { userId } = req.params;
       const notifications = await Notification.find({ userId } as any).sort({ date: -1 });
@@ -404,7 +406,7 @@ export const NotificationController = {
     }
   },
 
-  async send(req: any, res: any) {
+  async send(req: Request, res: Response) {
     try {
       const notifData = req.body;
       const notification = new Notification({
@@ -421,7 +423,7 @@ export const NotificationController = {
     }
   },
 
-  async markRead(req: any, res: any) {
+  async markRead(req: Request, res: Response) {
     try {
       const { id } = req.params;
       const notification = await Notification.findOneAndUpdate(
