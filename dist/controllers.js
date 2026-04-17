@@ -11,8 +11,8 @@ const resetTokenModel_1 = __importDefault(require("./resetTokenModel"));
 const resend_1 = require("resend");
 const resend = new resend_1.Resend(process.env.RESEND_API_KEY);
 // Log Resend API Key status on startup for debugging
-if (!process.env.RESEND_API_KEY || !process.env.RESEND_SENDER_EMAIL) {
-    console.error('❌ FATAL: Resend environment variables (RESEND_API_KEY or RESEND_SENDER_EMAIL) are missing.');
+if (!process.env.RESEND_API_KEY || !process.env.RESEND_SENDER_EMAIL || !process.env.FRONTEND_URL) {
+    console.error('❌ FATAL: Critical environment variables (RESEND_API_KEY, RESEND_SENDER_EMAIL, or FRONTEND_URL) are missing.');
 }
 else {
     console.log('✅ Resend service is initialized.');
@@ -240,7 +240,7 @@ exports.UserController = {
                 token: resetToken,
             }).save();
             // Construct Reset Link
-            const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+            const clientUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
             const link = `${clientUrl}/reset-password?token=${resetToken}`;
             const sender = process.env.RESEND_SENDER_EMAIL;
             if (!sender) {
