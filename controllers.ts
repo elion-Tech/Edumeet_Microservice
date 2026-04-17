@@ -1,37 +1,17 @@
 import { User, Course, Progress, Notification } from './models';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import ResetToken from './resetTokenModel';
 
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-        rejectUnauthorized: false
-    },
-    logger: true,
-    debug: true,
-    family: 4,
-} as any);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// Verify SMTP connection configuration on startup
-transporter.verify((error, success) => {
-    if (error) {
-        console.error('❌ SMTP Connection Error:', error);
-        console.error('DEBUG Config:', {
-            user: process.env.EMAIL_USER ? 'DEFINED' : 'UNDEFINED',
-            pass: process.env.EMAIL_PASS ? 'DEFINED' : 'UNDEFINED'
-        });
-    } else {
-        console.log('✅ SMTP Server is ready to take our messages');
-    }
-});
+// Log Resend API Key status on startup for debugging
+if (!process.env.RESEND_API_KEY || !process.env.RESEND_SENDER_EMAIL) {
+    console.error('❌ FATAL: Resend environment variables (RESEND_API_KEY or RESEND_SENDER_EMAIL) are missing.');
+} else {
+    console.log('✅ Resend service is initialized.');
+}
 
 // Controller for Course related operations
 export const CourseController = {
@@ -312,13 +292,20 @@ export const UserController = {
             const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
             const link = `${clientUrl}/reset-password?token=${resetToken}`;
     
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
+            // Use Resend to send the email
+            const { data, error } = await resend.emails.send({
+                from: process.env.RESEND_SENDER_EMAIL as string,
                 to: user.email,
                 subject: 'Edumeet Password Reset Request',
                 html: `<p>You requested a password reset. Click <a href="${link}">here</a> to reset your password.</p><p>This link expires in 1 hour.</p>`
             });
     
+            if (error) {
+                console.error('❌ Resend Email Send Error:', error);
+                return res.status(500).json({ error: 'Failed to send password reset email.' });
+            }
+
+            console.log('✅ Password reset email sent via Resend:', data);
             res.status(200).json({ message: 'If an account with that email exists, a password reset link has been sent.' });
         } catch (error) {
             console.error('Password Reset Request Error:', error);
