@@ -142,7 +142,7 @@ export const UserController = {
     async login(req: Request, res: Response) {
         try {
             const { email, password } = req.body;
-            const user = await User.findOne({ email } as any);
+            const user = await User.findOne({ email: email?.toLowerCase() } as any);
             
             if (!user) {
                 return res.status(401).json({ error: "Invalid credentials." });
@@ -173,6 +173,8 @@ export const UserController = {
             return res.status(400).json({ error: "Identity parameters (ID, Email, Password) are required." });
         }
 
+        userData.email = userData.email.toLowerCase();
+
         const { _id, ...updateData } = userData;
         
         let user = await User.findOne({ 
@@ -180,7 +182,7 @@ export const UserController = {
         } as any);
 
         if (user) {
-            if (user._id !== _id && user.email === userData.email) {
+            if (user._id !== _id && user.email.toLowerCase() === userData.email) {
                 return res.status(400).json({ error: "Email already registered." });
             }
             if (updateData.password && updateData.password !== user.password) {
@@ -268,7 +270,7 @@ export const UserController = {
     async requestPasswordReset(req: Request, res: Response) {
         try {
             const { email } = req.body;
-            const user = await User.findOne({ email } as any);
+            const user = await User.findOne({ email: email?.toLowerCase() } as any);
     
             if (!user) {
                 // Return success even if user not found to prevent email enumeration
