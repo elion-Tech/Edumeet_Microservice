@@ -142,7 +142,9 @@ export const UserController = {
     async login(req: Request, res: Response) {
         try {
             const { email, password } = req.body;
-            const user = await User.findOne({ email: email?.toLowerCase() } as any);
+            // Use a case-insensitive regex search to find users even if their email was saved in uppercase
+            const escapedEmail = email?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const user = await User.findOne({ email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } } as any);
             
             if (!user) {
                 return res.status(401).json({ error: "Invalid credentials." });
@@ -176,9 +178,12 @@ export const UserController = {
         userData.email = userData.email.toLowerCase();
 
         const { _id, ...updateData } = userData;
+
+        // Use case-insensitive check for existing email to catch legacy uppercase records
+        const escapedEmail = userData.email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         
         let user = await User.findOne({ 
-            $or: [{ _id: _id }, { email: userData.email }]
+            $or: [{ _id: _id }, { email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } }]
         } as any);
 
         if (user) {
@@ -270,7 +275,8 @@ export const UserController = {
     async requestPasswordReset(req: Request, res: Response) {
         try {
             const { email } = req.body;
-            const user = await User.findOne({ email: email?.toLowerCase() } as any);
+            const escapedEmail = email?.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const user = await User.findOne({ email: { $regex: new RegExp(`^${escapedEmail}$`, 'i') } } as any);
     
             if (!user) {
                 // Return success even if user not found to prevent email enumeration
