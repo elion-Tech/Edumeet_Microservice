@@ -10,11 +10,16 @@ import helmet from 'helmet';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Environment-aware CORS configuration
+const allowedOrigins = [
+    process.env.FRONTEND_URL, // e.g., https://your-app.vercel.app
+    'http://localhost:5173'   // local dev
+].filter(Boolean) as string[];
+
 // Update CORS for production security
 app.use(helmet());
-
 app.use(cors({
-    origin: '*', // In a production environment, you should list your actual domain here
+    origin: process.env.NODE_ENV === 'production' ? allowedOrigins : '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }) as any);
@@ -59,3 +64,5 @@ mongoose.connect(MONGODB_URI)
     console.error('❌ Database Initialization Error:', err);
     process.exit(1);
   });
+
+export default app;
