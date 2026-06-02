@@ -96,24 +96,6 @@ export const CourseController = {
       res.status(500).json({ error: "Failed to fetch student data" });
     }
   },
-
-  async updateCache(req: Request, res: Response) {
-    try {
-      const { id } = req.params;
-      const { cacheName } = req.body;
-      const course = await Course.findOneAndUpdate(
-        { _id: id } as any, 
-        { geminiCacheName: cacheName }, 
-        { new: true } as any
-      );
-      if (!course) return res.status(404).json({ error: "Course not found" });
-      res.json(course);
-    } catch (e) {
-      console.error("Course.updateCache error:", e);
-      res.status(500).json({ error: "Failed to update cache" });
-    }
-  },
-
   async scheduleLive(req: Request, res: Response) {
     try {
       const { courseId } = req.params;

@@ -49,7 +49,6 @@ const CourseSchema = new mongoose.Schema({
     meetingLink: String,
     isActive: { type: Boolean, default: false }
   },
-  geminiCacheName: { type: String, default: null },
   published: { type: Boolean, default: false, index: true },
   createdAt: { type: Date, default: Date.now }
 }, { _id: false });
