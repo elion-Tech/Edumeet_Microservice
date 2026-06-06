@@ -5,7 +5,7 @@ This microservice serves as the backbone for the Edumeet platform. it manages th
 ## 🏗️ Architecture & Responsibilities
 
 - **User Management**: Handles authentication and role-based access control (RBAC) for Students, Tutors, and Admins.
-- **Course Engine**: Manages the storage and retrieval of 10-segment course architectures, including video metadata and transcripts.
+- **Course Engine**: Manages the storage and retrieval of multi-segment course architectures, including video metadata and transcripts.
 - **Assessment Protocol**: Stores quiz results and manages the grading workflow for Capstone projects.
 - **Notification System**: Handles system announcements, grade alerts, and broadcast messages from tutors to students.
 - **Live Coordination**: API endpoints to schedule and broadcast live meeting links (Google Meet/Zoom).
