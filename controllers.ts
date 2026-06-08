@@ -102,9 +102,12 @@ export const CourseController = {
       const session = req.body;
 
       let updateQuery: any;
+      let options: any = { new: true, runValidators: true };
+
       // Handle null, undefined, or an empty object as a deletion request
       if (!session || (typeof session === 'object' && Object.keys(session).length === 0)) {
         updateQuery = { $unset: { liveSession: 1 } };
+        options = { new: true }; // No validation needed for $unset
       } else {
         // Use $set to ensure we only update the liveSession field and don't overwrite the whole document
         updateQuery = { $set: { liveSession: session } };
@@ -112,16 +115,17 @@ export const CourseController = {
 
       const course = await Course.findOneAndUpdate(
         { _id: courseId } as any, 
-        updateQuery, 
-        { new: true, runValidators: true }
+        updateQuery,
+        options
       );
 
       if (!course) return res.status(404).json({ error: "Course not found" });
       res.json(course);
     } catch (e) {
       console.error("Course.scheduleLive error:", e);
-      // Return 400 for validation errors to help with debugging
-      const status = (e as any).name === 'ValidationError' ? 400 : 500;
+      // Return 400 for validation or casting (Date) errors, 500 for actual server failures
+      const isValidationError = (e as any).name === 'ValidationError' || (e as any).name === 'CastError';
+      const status = isValidationError ? 400 : 500;
       res.status(status).json({ error: (e as any).message || "Failed to schedule live session" });
     }
   }
