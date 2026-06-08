@@ -99,22 +99,30 @@ export const CourseController = {
   async scheduleLive(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
-      const session = req.body; // This can be null from handleDeleteLiveSession
+      const session = req.body;
 
       let updateQuery: any;
-      if (session === null || session === undefined) {
-        // If session is null/undefined, it means we want to delete/unset the live session
+      // Handle null, undefined, or an empty object as a deletion request
+      if (!session || (typeof session === 'object' && Object.keys(session).length === 0)) {
         updateQuery = { $unset: { liveSession: 1 } };
       } else {
-        // Otherwise, update or set the live session
-        updateQuery = { liveSession: session };
+        // Use $set to ensure we only update the liveSession field and don't overwrite the whole document
+        updateQuery = { $set: { liveSession: session } };
       }
 
-      const course = await Course.findOneAndUpdate({ _id: courseId } as any, updateQuery, { new: true, runValidators: true } as any);
+      const course = await Course.findOneAndUpdate(
+        { _id: courseId } as any, 
+        updateQuery, 
+        { new: true, runValidators: true }
+      );
+
+      if (!course) return res.status(404).json({ error: "Course not found" });
       res.json(course);
     } catch (e) {
       console.error("Course.scheduleLive error:", e);
-      res.status(500).json({ error: "Failed to schedule live session" });
+      // Return 400 for validation errors to help with debugging
+      const status = (e as any).name === 'ValidationError' ? 400 : 500;
+      res.status(status).json({ error: (e as any).message || "Failed to schedule live session" });
     }
   }
 };
