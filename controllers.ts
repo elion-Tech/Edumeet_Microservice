@@ -107,7 +107,7 @@ export const CourseController = {
       // Handle null, undefined, or an empty object as a deletion request
       if (!session || (typeof session === 'object' && Object.keys(session).length === 0)) {
         updateQuery = { $unset: { liveSession: 1 } };
-        options = { new: true }; // No validation needed for $unset
+        options = { new: true, runValidators: false }; // Explicitly disable validation for $unset
       } else {
         // Use $set to ensure we only update the liveSession field and don't overwrite the whole document
         updateQuery = { $set: { liveSession: session } };
