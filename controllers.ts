@@ -99,8 +99,18 @@ export const CourseController = {
   async scheduleLive(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
-      const session = req.body;
-      const course = await Course.findOneAndUpdate({ _id: courseId } as any, { liveSession: session }, { new: true } as any);
+      const session = req.body; // This can be null from handleDeleteLiveSession
+
+      let updateQuery: any;
+      if (session === null || session === undefined) {
+        // If session is null/undefined, it means we want to delete/unset the live session
+        updateQuery = { $unset: { liveSession: 1 } };
+      } else {
+        // Otherwise, update or set the live session
+        updateQuery = { liveSession: session };
+      }
+
+      const course = await Course.findOneAndUpdate({ _id: courseId } as any, updateQuery, { new: true, runValidators: true } as any);
       res.json(course);
     } catch (e) {
       console.error("Course.scheduleLive error:", e);
