@@ -107,7 +107,6 @@ export const CourseController = {
       // Handle null, undefined, or an empty object as a deletion request
       if (!session || (typeof session === 'object' && Object.keys(session).length === 0)) {
         updateQuery = { $unset: { liveSession: 1 } };
-        options = { new: true, runValidators: false }; // Explicitly disable validation for $unset
       } else {
         // Use $set to ensure we only update the liveSession field and don't overwrite the whole document
         updateQuery = { $set: { liveSession: session } };
@@ -120,6 +119,26 @@ export const CourseController = {
       );
 
       if (!course) return res.status(404).json({ error: "Course not found" });
+
+      // Proactive Setup: Notify students automatically if a session was created/updated
+      if (session && session.isActive) {
+          const progressDocs = await Progress.find({ courseId: course._id } as any);
+          const studentIds = progressDocs.map(p => p.userId);
+          
+          const notificationPromises = studentIds.map(sId => {
+              return new Notification({
+                  _id: `n_live_${Date.now()}_${sId.slice(-4)}`,
+                  userId: sId,
+                  fromName: course.tutorName || "Instructor",
+                  message: `New Live Class Scheduled: ${session.topic} on ${new Date(session.date).toLocaleString()}`,
+                  type: 'live',
+                  date: new Date(),
+                  read: false
+              }).save();
+          });
+          await Promise.all(notificationPromises);
+      }
+
       res.json(course);
     } catch (e) {
       console.error("Course.scheduleLive error:", e);
