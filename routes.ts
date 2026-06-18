@@ -15,8 +15,10 @@ router.get('/courses/:id', CourseController.getById);
 router.post('/courses', CourseController.create);
 router.delete('/courses/:id', CourseController.delete);
 router.patch('/courses/:id/publish', CourseController.togglePublish);
-router.get('/courses/:id/students', CourseController.getEnrolledStudents);
+router.get('/courses/:id/students', CourseController.getEnrolledStudents); // Corrected path
 router.post('/courses/:courseId/live-session', CourseController.scheduleLive);
+router.get('/courses/:courseId/live-sessions', CourseController.getLiveSessionsByCourse);
+router.get('/courses/all-live-sessions', CourseController.getAllLiveSessions);
 router.delete('/courses/:courseId/live-sessions/:liveSessionId', CourseController.deleteLiveClass);
 
 // User Routes

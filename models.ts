@@ -84,3 +84,4 @@ export const Course = mongoose.models.Course || mongoose.model('Course', CourseS
 export const Progress = mongoose.models.Progress || mongoose.model('Progress', ProgressSchema);
 export const LiveClass = mongoose.models.LiveClass || mongoose.model('LiveClass', LiveClassSchema);
 export const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
+export const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
