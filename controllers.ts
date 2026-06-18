@@ -327,6 +327,28 @@ export const UserController = {
         }
     },
 
+    async unenroll(req: Request, res: Response) {
+        const { userId, courseId } = req.params;
+        try {
+            const user = await User.findOne({ _id: userId } as any);
+            if (!user) return res.status(404).json({ error: "User not found" });
+
+            // Remove course from enrolled list
+            user.enrolledCourseIds = user.enrolledCourseIds.filter((id: string) => id !== courseId);
+            await user.save();
+
+            // Delete associated progress document
+            await Progress.findOneAndDelete({ userId, courseId } as any);
+
+            const result = user.toObject();
+            delete result.password;
+            res.json(result);
+        } catch (e: any) {
+            console.error("User.unenroll error:", e);
+            res.status(500).json({ error: "Unenrollment process failed." });
+        }
+    },
+
     async toggleSuspension(req: Request, res: Response) {
         try {
             const { userId } = req.params;
