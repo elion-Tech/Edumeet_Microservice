@@ -1,4 +1,4 @@
-import { User, Course, Progress, Notification } from './models';
+import { User, Course, Progress, Notification, LiveClass } from './models';
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
@@ -96,37 +96,51 @@ export const CourseController = {
       res.status(500).json({ error: "Failed to fetch student data" });
     }
   },
+
   async scheduleLive(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
-      const sessionData = req.body;
+      const sessionData = req.body; // This will contain _id, topic, date, meetingLink, isActive
 
-      const course = await Course.findOne({ _id: courseId } as any);
-      if (!course) return res.status(404).json({ error: "Course not found" });
+      if (!sessionData.topic || !sessionData.date || !sessionData.meetingLink) {
+        return res.status(400).json({ error: "Topic, date, and meeting link are required." });
+      }
 
-      if (!course.liveSessions) course.liveSessions = [];
+      let liveClass;
 
       if (sessionData._id) {
         // Update/Toggle existing session
-        const index = course.liveSessions.findIndex((s: any) => s._id === sessionData._id);
-        if (index !== -1) {
-          course.liveSessions[index] = { ...course.liveSessions[index].toObject(), ...sessionData };
-        } else {
-          return res.status(404).json({ error: "Live session record not found" });
+        liveClass = await LiveClass.findOneAndUpdate(
+          { _id: sessionData._id, courseId: courseId } as any,
+          { $set: sessionData },
+          { new: true, runValidators: true }
+        );
+        if (!liveClass) {
+          return res.status(404).json({ error: "Live session not found for this course." });
         }
+
       } else {
         // Create new session
-        if (course.liveSessions.length >= 2) {
+        const existingSessions = await LiveClass.find({ courseId: courseId });
+        if (existingSessions.length >= 2) {
           return res.status(400).json({ error: "Maximum of 2 live classes allowed per course." });
         }
-        sessionData._id = `ls_${Date.now()}`;
-        course.liveSessions.push(sessionData);
+        liveClass = new LiveClass({
+          _id: `ls_${Date.now()}`,
+          courseId: courseId,
+          topic: sessionData.topic,
+          date: sessionData.date,
+          meetingLink: sessionData.meetingLink,
+          isActive: sessionData.isActive ?? false // Default to false if not provided
+        });
+        await liveClass.save();
       }
 
-      await course.save();
-
       // Proactive Setup: Notify students automatically if a session was activated
-      if (sessionData.isActive) {
+      if (liveClass.isActive) {
+          const course = await Course.findOne({ _id: courseId } as any);
+          if (!course) return res.status(404).json({ error: "Course not found for notification." });
+
           const progressDocs = await Progress.find({ courseId: course._id } as any);
           const studentIds = progressDocs.map(p => p.userId);
           
@@ -135,7 +149,7 @@ export const CourseController = {
                   _id: `n_live_${Date.now()}_${sId.slice(-4)}`,
                   userId: sId,
                   fromName: course.tutorName || "Instructor",
-                  message: `Live Class Update: ${sessionData.topic} is now scheduled for ${new Date(sessionData.date).toLocaleString()}`,
+                  message: `Live Class Update: ${liveClass.topic} is now scheduled for ${new Date(liveClass.date).toLocaleString()}`,
                   type: 'live',
                   date: new Date(),
                   read: false
@@ -144,13 +158,39 @@ export const CourseController = {
           await Promise.all(notificationPromises);
       }
 
-      res.json(course);
+      res.json(liveClass);
     } catch (e) {
       console.error("Course.scheduleLive error:", e);
       // Return 400 for validation or casting (Date) errors, 500 for actual server failures
       const isValidationError = (e as any).name === 'ValidationError' || (e as any).name === 'CastError';
       const status = isValidationError ? 400 : 500;
       res.status(status).json({ error: (e as any).message || "Failed to schedule live session" });
+    }
+  },
+
+  async getLiveSessionsByCourse(req: Request, res: Response) {
+    try {
+      const { courseId } = req.params;
+      const liveSessions = await LiveClass.find({ courseId: courseId }).sort({ date: 1 });
+      res.status(200).json(liveSessions);
+    } catch (e) {
+      console.error("Course.getLiveSessionsByCourse error:", e);
+      res.status(500).json({ error: "Failed to fetch live sessions" });
+    }
+  },
+
+  async getAllLiveSessions(req: Request, res: Response) {
+    try {
+      const filter: any = {};
+      // If a tutorId is provided, filter by it. This assumes tutorId is stored on LiveClass or we need to join.
+      // For now, let's assume LiveClass doesn't directly store tutorId, so we'll fetch all and filter on frontend or enrich.
+      // A more robust solution would be to store tutorId on LiveClass or perform a lookup/join.
+      // For simplicity, let's fetch all and let the frontend filter by tutor's courses.
+      const liveSessions = await LiveClass.find(filter).sort({ date: 1 });
+      res.status(200).json(liveSessions);
+    } catch (e) {
+      console.error("Course.getAllLiveSessions error:", e);
+      res.status(500).json({ error: "Failed to fetch all live sessions" });
     }
   }
 };

@@ -43,13 +43,6 @@ const CourseSchema = new mongoose.Schema({
     instructions: String,
     type: { type: String, enum: ['project', 'final_exam'] }
   },
-  liveSessions: [{
-    _id: String,
-    topic: String,
-    date: Date,
-    meetingLink: String,
-    isActive: { type: Boolean, default: false }
-  }],
   published: { type: Boolean, default: false, index: true },
   createdAt: { type: Date, default: Date.now }
 }, { _id: false });
@@ -77,7 +70,17 @@ const NotificationSchema = new mongoose.Schema({
   date: { type: Date, default: Date.now }
 }, { _id: false });
 
+const LiveClassSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  courseId: { type: String, required: true, index: true },
+  topic: { type: String, required: true },
+  date: { type: Date, required: true },
+  meetingLink: { type: String, required: true },
+  isActive: { type: Boolean, default: false }
+}, { _id: false });
+
 export const User = mongoose.models.User || mongoose.model('User', UserSchema);
 export const Course = mongoose.models.Course || mongoose.model('Course', CourseSchema);
 export const Progress = mongoose.models.Progress || mongoose.model('Progress', ProgressSchema);
+export const LiveClass = mongoose.models.LiveClass || mongoose.model('LiveClass', LiveClassSchema);
 export const Notification = mongoose.models.Notification || mongoose.model('Notification', NotificationSchema);
