@@ -22,7 +22,7 @@ export const CourseController = {
       const filter: any = isAdminOrTutorView ? {} : { published: true };
       const projection = isAdminOrTutorView ? {} : { password: 0 };
 
-      const courses = await Course.find(filter).select(projection).sort({ createdAt: -1 });
+      const courses = await Course.find(filter).select(projection as any).sort({ createdAt: -1 });
       res.status(200).json(courses);
     } catch (e) {
       console.error("Course.getAll error:", e);
