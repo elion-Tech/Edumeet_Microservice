@@ -18,6 +18,8 @@ const CourseSchema = new mongoose.Schema({
   description: String,
   thumbnailUrl: String,
   price: { type: Number, default: 0 },
+  isPasswordProtected: { type: Boolean, default: false },
+  password: { type: String },
   tutorId: { type: String, index: true },
   tutorName: String,
   modules: [{

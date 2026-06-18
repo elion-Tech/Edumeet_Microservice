@@ -18,10 +18,11 @@ if (!process.env.RESEND_API_KEY || !process.env.RESEND_SENDER_EMAIL || !process.
 export const CourseController = {
   async getAll(req: Request, res: Response) {
     try {
-      // Admins/Tutors can see all courses (e.g., ?view=all), students only see published ones.
-      const filter: any = req.query.view === 'all' ? {} : { published: true };
-      
-      const courses = await Course.find(filter).sort({ createdAt: -1 });
+      const isAdminOrTutorView = req.query.view === 'all';
+      const filter: any = isAdminOrTutorView ? {} : { published: true };
+      const projection = isAdminOrTutorView ? {} : { password: 0 };
+
+      const courses = await Course.find(filter).select(projection).sort({ createdAt: -1 });
       res.status(200).json(courses);
     } catch (e) {
       console.error("Course.getAll error:", e);
@@ -324,6 +325,32 @@ export const UserController = {
         } catch (e: any) {
             console.error("User.enroll error:", e);
             res.status(500).json({ error: "Enrollment error." });
+        }
+    },
+
+    async enrollWithPassword(req: Request, res: Response) {
+        const { userId, courseId } = req.params;
+        const { password } = req.body;
+        try {
+            const user = await User.findOne({ _id: userId } as any);
+            if (!user) return res.status(404).json({ error: "User not found" });
+
+            const course = await Course.findOne({ _id: courseId } as any);
+            if (!course) return res.status(404).json({ error: "Course not found" });
+
+            if (!course.isPasswordProtected || course.price > 0) {
+                return res.status(403).json({ error: "This course is not a password-protected free course." });
+            }
+
+            if (course.password !== password) {
+                return res.status(401).json({ error: "Invalid password." });
+            }
+
+            // If password is correct, proceed with enrollment logic from the original enroll method
+            return UserController.enroll(req, res);
+        } catch (e: any) {
+            console.error("User.enrollWithPassword error:", e);
+            res.status(500).json({ error: "Enrollment process failed." });
         }
     },
 

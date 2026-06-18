@@ -27,6 +27,7 @@ router.post('/users', UserController.save);
 router.post('/users/:userId/enroll', UserController.enroll);
 router.patch('/users/:userId/suspend', UserController.toggleSuspension);
 router.delete('/users/:userId', UserController.delete);
+router.post('/users/:userId/enroll-with-password/:courseId', UserController.enrollWithPassword);
 router.delete('/users/:userId/unenroll/:courseId', UserController.unenroll);
 
 // Progress Routes
