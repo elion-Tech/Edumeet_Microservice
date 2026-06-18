@@ -43,12 +43,13 @@ const CourseSchema = new mongoose.Schema({
     instructions: String,
     type: { type: String, enum: ['project', 'final_exam'] }
   },
-  liveSession: {
+  liveSessions: [{
+    _id: String,
     topic: String,
     date: Date,
     meetingLink: String,
     isActive: { type: Boolean, default: false }
-  },
+  }],
   published: { type: Boolean, default: false, index: true },
   createdAt: { type: Date, default: Date.now }
 }, { _id: false });

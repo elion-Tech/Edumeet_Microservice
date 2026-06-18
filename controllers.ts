@@ -99,29 +99,34 @@ export const CourseController = {
   async scheduleLive(req: Request, res: Response) {
     try {
       const { courseId } = req.params;
-      const session = req.body;
+      const sessionData = req.body;
 
-      let updateQuery: any;
-      let options: any = { new: true, runValidators: true };
-
-      // Handle null, undefined, or an empty object as a deletion request
-      if (!session || (typeof session === 'object' && Object.keys(session).length === 0)) {
-        updateQuery = { $unset: { liveSession: 1 } };
-      } else {
-        // Use $set to ensure we only update the liveSession field and don't overwrite the whole document
-        updateQuery = { $set: { liveSession: session } };
-      }
-
-      const course = await Course.findOneAndUpdate(
-        { _id: courseId } as any, 
-        updateQuery,
-        options
-      );
-
+      const course = await Course.findOne({ _id: courseId } as any);
       if (!course) return res.status(404).json({ error: "Course not found" });
 
-      // Proactive Setup: Notify students automatically if a session was created/updated
-      if (session && session.isActive) {
+      if (!course.liveSessions) course.liveSessions = [];
+
+      if (sessionData._id) {
+        // Update/Toggle existing session
+        const index = course.liveSessions.findIndex((s: any) => s._id === sessionData._id);
+        if (index !== -1) {
+          course.liveSessions[index] = { ...course.liveSessions[index].toObject(), ...sessionData };
+        } else {
+          return res.status(404).json({ error: "Live session record not found" });
+        }
+      } else {
+        // Create new session
+        if (course.liveSessions.length >= 2) {
+          return res.status(400).json({ error: "Maximum of 2 live classes allowed per course." });
+        }
+        sessionData._id = `ls_${Date.now()}`;
+        course.liveSessions.push(sessionData);
+      }
+
+      await course.save();
+
+      // Proactive Setup: Notify students automatically if a session was activated
+      if (sessionData.isActive) {
           const progressDocs = await Progress.find({ courseId: course._id } as any);
           const studentIds = progressDocs.map(p => p.userId);
           
@@ -130,7 +135,7 @@ export const CourseController = {
                   _id: `n_live_${Date.now()}_${sId.slice(-4)}`,
                   userId: sId,
                   fromName: course.tutorName || "Instructor",
-                  message: `New Live Class Scheduled: ${session.topic} on ${new Date(session.date).toLocaleString()}`,
+                  message: `Live Class Update: ${sessionData.topic} is now scheduled for ${new Date(sessionData.date).toLocaleString()}`,
                   type: 'live',
                   date: new Date(),
                   read: false
