@@ -74,7 +74,7 @@ const LiveClassSchema = new mongoose.Schema({
   _id: { type: String, required: true },
   courseId: { type: String, required: true, index: true },
   topic: { type: String, required: true },
-  date: { type: Date, required: true },
+  date: { type: Date, required: true, expires: 0 }, // Live classes expire 0 seconds after their date
   meetingLink: { type: String, required: true },
   isActive: { type: Boolean, default: false }
 }, { _id: false });

@@ -192,6 +192,20 @@ export const CourseController = {
       console.error("Course.getAllLiveSessions error:", e);
       res.status(500).json({ error: "Failed to fetch all live sessions" });
     }
+  },
+
+  async deleteLiveClass(req: Request, res: Response) {
+    try {
+      const { liveSessionId } = req.params;
+      const result = await LiveClass.findOneAndDelete({ _id: liveSessionId } as any);
+      if (!result) {
+        return res.status(404).json({ error: "Live session not found." });
+      }
+      res.status(204).send(); // No content on successful deletion
+    } catch (e) {
+      console.error("Course.deleteLiveClass error:", e);
+      res.status(500).json({ error: "Failed to delete live session." });
+    }
   }
 };
 
