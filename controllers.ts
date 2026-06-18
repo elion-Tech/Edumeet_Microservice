@@ -192,7 +192,6 @@ export const CourseController = {
       console.error("Course.getAllLiveSessions error:", e);
       res.status(500).json({ error: "Failed to fetch all live sessions" });
     }
-  },
   }
 };
 
