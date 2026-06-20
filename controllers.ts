@@ -346,7 +346,9 @@ export const UserController = {
                 return res.status(401).json({ error: "Invalid password." });
             }
 
-            // If password is correct, proceed with enrollment logic from the original enroll method
+            // If password is correct, ensure courseId is in the request body
+            // so the shared enroll logic receives the expected payload.
+            (req as any).body = { ...(req as any).body, courseId };
             return UserController.enroll(req, res);
         } catch (e: any) {
             console.error("User.enrollWithPassword error:", e);
